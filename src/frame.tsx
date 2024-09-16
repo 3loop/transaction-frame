@@ -56,7 +56,7 @@ const Asset: React.FC<{ transfer: AssetTransfer; label: string }> = ({
         gap: "16px",
       }}
     >
-      <img
+      {/* <img
         src={`https://tokens-data.1inch.io/images/${transfer.asset.address.toLowerCase()}.png`}
         style={{
           width: "56px",
@@ -64,7 +64,7 @@ const Asset: React.FC<{ transfer: AssetTransfer; label: string }> = ({
           borderRadius: "50%",
           border: "0.5px solid rgba(255, 255, 255, 0.08)",
         }}
-      />
+      /> */}
       <div
         style={{
           flex: 1,
@@ -130,7 +130,26 @@ function getIconForTxType(txType: string) {
 }
 
 function getNameForTxType(txType: string) {
-  return txType
+  const txTypeToName: Record<string, string> = {
+    'repay-loan': 'Repay',
+    'deposit-collateral': 'Collateral',
+    'borrow': 'Borrow',
+    'withdraw-collateral': 'Collateral',
+    'swap': 'Swap',
+    'wrap': 'Wrap',
+    'unwrap': 'Unwrap',
+    'approve-token': 'Approve',
+    'transfer-token': 'Transfer',
+    'approve-nft': 'Approve',
+    'transfer-nft': 'Transfer',
+    'send-to-bridge': 'Bridge',
+    'receive-from-bridge': 'Bridge',
+    'account-abstraction': 'AA',
+    'stake-token': 'Stake',
+    'unstake-token': 'Unstake',
+  }
+
+  return txTypeToName[txType] || 'Other'
 }
 
 const Background: React.FC<{ tx: InterpretedTransaction }> = ({ tx }) => {
