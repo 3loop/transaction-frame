@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "rootDir": "src",
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
+    "allowSyntheticDefaultImports": true,
+    "noErrorTruncation": true,
+    "lib": ["ESNext", "DOM"],
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2022",
+    "incremental": true,
+    "paths": {
+      "@/*": ["./src/*.js"]
+    },
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
+    "plugins": [{ "name": "@effect/langauge-service" }]
+  },
+  "include": ["src/**/*"]
+}
