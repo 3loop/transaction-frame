@@ -51,49 +51,59 @@ const Asset: React.FC<{
       style={{
         display: "flex",
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "flex-end",
         gap: "16px",
       }}
     >
-      {url ? (
-        <img
-          src={url}
-          style={{
-            width: "56px",
-            height: "56px",
-            borderRadius: "50%",
-            border: "0.5px solid rgba(255, 255, 255, 0.08)",
-          }}
-        />
-      ) : undefined}
       <div
         style={{
-          flex: 1,
           display: "flex",
           flexDirection: "row",
-          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "16px",
+          flex: 1,
         }}
       >
+        {url ? (
+          <img
+            src={url}
+            style={{
+              width: "56px",
+              height: "56px",
+              borderRadius: "50%",
+              border: "0.5px solid rgba(255, 255, 255, 0.08)",
+            }}
+          />
+        ) : undefined}
         <div
           style={{
+            flex: 1,
             display: "flex",
-            flexDirection: "column",
+            flexDirection: "row",
+            justifyContent: "space-between",
           }}
         >
-          <span
+          <div
             style={{
-              fontSize: "18px",
-              lineHeight: "20px",
-              color: "rgb(98, 114, 84)",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            {label}
-          </span>
-          <span
-            style={{ fontWeight: "600", fontSize: "36px", lineHeight: "40px" }}
-          >
-            {transfer.asset.symbol}
-          </span>
+            <span
+              style={{
+                fontSize: "18px",
+                lineHeight: "20px",
+                color: "rgb(98, 114, 84)",
+              }}
+            >
+              {label}
+            </span>
+            <span
+              style={{ fontWeight: "600", fontSize: "36px", lineHeight: "40px" }}
+            >
+              {transfer.asset.symbol}
+            </span>
+          </div>
         </div>
       </div>
       <span
