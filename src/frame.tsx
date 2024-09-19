@@ -8,6 +8,7 @@ import {
 } from "@3loop/transaction-interpreter"
 import { match } from "ts-pattern"
 import { chainIdToName } from "./constants"
+import { resolveTokenIcon } from "./image"
 
 function shortenHash(hash: string) {
   return hash.slice(0, 10) + "..." + hash.slice(-10)
@@ -40,10 +41,11 @@ const FooterColumn: React.FC<{ title: string; description: string }> = ({
   )
 }
 
-const Asset: React.FC<{ transfer: AssetTransfer; label: string }> = ({
-  transfer,
-  label,
-}) => {
+const Asset: React.FC<{
+  transfer: AssetTransfer
+  label: string
+  url: string | null
+}> = ({ transfer, label, url }) => {
   return (
     <div
       style={{
@@ -53,15 +55,17 @@ const Asset: React.FC<{ transfer: AssetTransfer; label: string }> = ({
         gap: "16px",
       }}
     >
-      {/* <img
-        src={`https://tokens-data.1inch.io/images/${transfer.asset.address.toLowerCase()}.png`}
-        style={{
-          width: "56px",
-          height: "56px",
-          borderRadius: "50%",
-          border: "0.5px solid rgba(255, 255, 255, 0.08)",
-        }}
-      /> */}
+      {url ? (
+        <img
+          src={url}
+          style={{
+            width: "56px",
+            height: "56px",
+            borderRadius: "50%",
+            border: "0.5px solid rgba(255, 255, 255, 0.08)",
+          }}
+        />
+      ) : undefined}
       <div
         style={{
           flex: 1,
@@ -92,8 +96,8 @@ const Asset: React.FC<{ transfer: AssetTransfer; label: string }> = ({
           </span>
         </div>
       </div>
-        <span
-          style={{
+      <span
+        style={{
           fontWeight: "600",
           fontSize: "36px",
           lineHeight: "40px",
@@ -131,30 +135,30 @@ const TX_TYPE_TO_ICON: Record<string, JSX.Element> = {
 }
 
 function getIconForTxType(txType: string) {
-  return TX_TYPE_TO_ICON[txType] || TX_TYPE_TO_ICON['other']
+  return TX_TYPE_TO_ICON[txType] || TX_TYPE_TO_ICON["other"]
 }
 
 function getNameForTxType(txType: string) {
   const txTypeToName: Record<string, string> = {
-    'repay-loan': 'Repay',
-    'deposit-collateral': 'Collateral',
-    'borrow': 'Borrow',
-    'withdraw-collateral': 'Collateral',
-    'swap': 'Swap',
-    'wrap': 'Wrap',
-    'unwrap': 'Unwrap',
-    'approve-token': 'Approve',
-    'transfer-token': 'Transfer',
-    'approve-nft': 'Approve',
-    'transfer-nft': 'Transfer',
-    'send-to-bridge': 'Bridge',
-    'receive-from-bridge': 'Bridge',
-    'account-abstraction': 'AA',
-    'stake-token': 'Stake',
-    'unstake-token': 'Unstake',
+    "repay-loan": "Repay",
+    "deposit-collateral": "Collateral",
+    borrow: "Borrow",
+    "withdraw-collateral": "Collateral",
+    swap: "Swap",
+    wrap: "Wrap",
+    unwrap: "Unwrap",
+    "approve-token": "Approve",
+    "transfer-token": "Transfer",
+    "approve-nft": "Approve",
+    "transfer-nft": "Transfer",
+    "send-to-bridge": "Bridge",
+    "receive-from-bridge": "Bridge",
+    "account-abstraction": "AA",
+    "stake-token": "Stake",
+    "unstake-token": "Unstake",
   }
 
-  return txTypeToName[txType] || 'Other'
+  return txTypeToName[txType] || "Other"
 }
 
 const Background: React.FC<{ tx: InterpretedTransaction }> = ({ tx }) => {
@@ -213,8 +217,11 @@ const Separator: React.FC<{ vertical?: boolean }> = ({ vertical }) => {
 }
 
 const Content: React.FC<
-  React.PropsWithChildren<{ tx: InterpretedTransaction }>
-> = ({ tx }) => {
+  React.PropsWithChildren<{
+    tx: InterpretedTransaction
+    tokenIconMap: Record<string, string | null>
+  }>
+> = ({ tx, tokenIconMap }) => {
   return (
     <div
       style={{
@@ -238,7 +245,12 @@ const Content: React.FC<
         >
           <TokenColumn>
             {tx.assetsSent.map((asset) => (
-              <Asset key={asset.asset.address} transfer={asset} label="Sent:" />
+              <Asset
+                key={asset.asset.address}
+                transfer={asset}
+                url={tokenIconMap[asset.asset.address]}
+                label="Sent:"
+              />
             ))}
           </TokenColumn>
           <Separator vertical />
@@ -246,6 +258,7 @@ const Content: React.FC<
             {tx.assetsReceived.map((asset) => (
               <Asset
                 key={asset.asset.address}
+                url={tokenIconMap[asset.asset.address]}
                 transfer={asset}
                 label="Received:"
               />
@@ -257,7 +270,13 @@ const Content: React.FC<
   )
 }
 
-const MainComponent = ({ tx }: { tx: InterpretedTransaction }) => {
+const MainComponent = ({
+  tx,
+  tokenIconMap,
+}: {
+  tx: InterpretedTransaction
+  tokenIconMap: Record<string, string | null>
+}) => {
   return (
     <div
       style={{
@@ -294,7 +313,7 @@ const MainComponent = ({ tx }: { tx: InterpretedTransaction }) => {
           justifyContent: "center",
         }}
       >
-        <Content tx={tx} />
+        <Content tx={tx} tokenIconMap={tokenIconMap} />
       </div>
       <div style={{ display: "flex", gap: "48px", paddingTop: "16x" }}>
         <FooterColumn title="Chain:" description={chainIdToName[tx.chain]} />
@@ -309,9 +328,26 @@ const MainComponent = ({ tx }: { tx: InterpretedTransaction }) => {
 
 export const drawFrame = (tx: InterpretedTransaction) =>
   Effect.gen(function* () {
+    const tokens = tx.assetsSent.concat(tx.assetsReceived).map((asset) => {
+      return asset.asset.address
+    })
+
+    // NOTE: Satori will crash if the image is not found, thus we need to resolve the image first
+    const tokenIcons = yield* Effect.all(tokens.map(resolveTokenIcon), {
+      concurrency: 'unbounded'
+    })
+
+    const tokenIconMap = tokens.reduce(
+      (acc, address, index) => {
+        acc[address] = tokenIcons[index]
+        return acc
+      },
+      {} as Record<string, string | null>,
+    )
+
     const svg = yield* Effect.tryPromise({
       try: () => {
-        return satori(<MainComponent tx={tx} />, {
+        return satori(<MainComponent tx={tx} tokenIconMap={tokenIconMap} />, {
           width: 1200,
           height: 600,
           fonts: fonts,

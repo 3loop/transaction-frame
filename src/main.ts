@@ -8,6 +8,7 @@ import { ContractMetaStoreLive } from "./decoder/meta-loader"
 import { RPCProviderLive } from "./decoder/provider"
 import { HttpLive } from "./router"
 import { TracingLive } from "./tracing"
+import { FetchHttpClient } from '@effect/platform'
 
 Dotenv.config()
 
@@ -31,6 +32,7 @@ const MainLive = Layer.provide(
   Layer.provide(Logger.logFmt),
   Layer.provide(DecoderLayer),
   Layer.provide(TracingLive),
+  Layer.provide(FetchHttpClient.layer)
 )
 
 const cache = Effect.provide(
