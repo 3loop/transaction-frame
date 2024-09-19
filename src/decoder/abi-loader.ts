@@ -21,6 +21,10 @@ export const AbiStoreLive = Layer.effect(
       Config.string("ETHERSCAN_API_KEY"),
       undefined,
     )
+    const baseScanApiKey = yield* Config.withDefault(
+      Config.string("BASESCAN_API_KEY"),
+      undefined,
+    )
     const sql = yield* SqlClient.SqlClient
 
     return AbiStore.of({
@@ -32,6 +36,16 @@ export const AbiStoreLive = Layer.effect(
           SourcifyStrategyResolver(),
           OpenchainStrategyResolver(),
           FourByteStrategyResolver(),
+        ],
+        1: [
+          EtherscanStrategyResolver({
+            apikey: etherscanApiKey,
+          }),
+        ],
+        8453: [
+          EtherscanStrategyResolver({
+            apikey: baseScanApiKey,
+          }),
         ],
       },
       set: (key, value) =>
@@ -100,15 +114,15 @@ export const AbiStoreLive = Layer.effect(
                 ),
                 ...[
                   signature != null &&
-                  and(
-                    eq(contractAbiTable.signature, signature),
-                    eq(contractAbiTable.type, "func"),
-                  ),
+                    and(
+                      eq(contractAbiTable.signature, signature),
+                      eq(contractAbiTable.type, "func"),
+                    ),
                   event != null &&
-                  and(
-                    eq(contractAbiTable.event, event),
-                    eq(contractAbiTable.type, "event"),
-                  ),
+                    and(
+                      eq(contractAbiTable.event, event),
+                      eq(contractAbiTable.type, "event"),
+                    ),
                 ].filter(Boolean),
               ),
             )

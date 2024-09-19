@@ -6,9 +6,12 @@ import { createPublicClient, http } from "viem"
 const providerConfigs: Record<number, any> = {
   1: {
     rpcUrl: process.env.ETH_RPC_URL,
-    traceAPI: 'parity',
+    traceAPI: "parity",
   },
-  11155111: { rpcUrl: process.env.SEPOLIA_RPC_URL },
+  8453: {
+    rpcUrl: process.env.BASE_RPC_URL,
+    traceAPI: "parity",
+  },
 }
 
 const providers: Record<number, PublicClientObject> = {}
@@ -28,7 +31,7 @@ export function getProvider(chainID: number): PublicClientObject | null {
         transport: http(url),
       }),
       config: {
-        traceAPI: providerConfigs[chainID]?.traceAPI ?? 'none',
+        traceAPI: providerConfigs[chainID]?.traceAPI ?? "none",
       },
     }
 

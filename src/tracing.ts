@@ -11,7 +11,7 @@ export const TracingLive = Layer.unwrapEffect(
     const apiKey = yield* Config.option(Config.string("HONEYCOMB_API_KEY"))
     const dataset = yield* Config.withDefault(
       Config.string("HONEYCOMB_DATASET"),
-      "@3loop/decoder-server",
+      "@3loop/transaction-decoder",
     )
 
     let traceExporterConfig: OTLPExporterNodeConfigBase | undefined
