@@ -1,18 +1,8 @@
+import { providerConfigs } from "@/constants"
 import type { PublicClientObject } from "@3loop/transaction-decoder"
 import { PublicClient, UnknownNetwork } from "@3loop/transaction-decoder"
 import { Effect, Layer } from "effect"
 import { createPublicClient, http } from "viem"
-
-const providerConfigs: Record<number, any> = {
-  1: {
-    rpcUrl: process.env.ETH_RPC_URL,
-    traceAPI: "parity",
-  },
-  8453: {
-    rpcUrl: process.env.BASE_RPC_URL,
-    traceAPI: "parity",
-  },
-}
 
 const providers: Record<number, PublicClientObject> = {}
 

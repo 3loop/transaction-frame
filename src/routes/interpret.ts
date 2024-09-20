@@ -3,7 +3,7 @@ import { HttpRouter, HttpServerResponse } from "@effect/platform"
 import { Effect, Either } from "effect"
 import { Hex } from "viem"
 import { interpretTransaction } from "../interpreter"
-import { drawFrame } from "@/frame"
+import { drawFrame } from "../image-frame"
 
 export const InterpretRoute = HttpRouter.get(
   "/interpret/:chain/:hash",

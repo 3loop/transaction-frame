@@ -1,5 +1,5 @@
-import { EXPLORER_URLS } from "@/constants"
-import { validateMessage } from "@/utils"
+import { providerConfigs } from "@/constants"
+import { validateMessage } from "@/utils/airstack"
 import {
   HttpRouter,
   HttpServerRequest,
@@ -8,13 +8,36 @@ import {
 import { Effect } from "effect"
 import { getFrameHtml, FrameActionPayload } from "frames.js"
 import { Hex } from "viem"
+import { Schema } from "@effect/schema"
+
+const FrameActionSchema = Schema.Struct({
+  trustedData: Schema.Struct({
+    messageBytes: Schema.String,
+  }),
+  untrustedData: Schema.Struct({
+    fid: Schema.Number,
+    url: Schema.String,
+    messageHash: Schema.String,
+    timestamp: Schema.Number,
+    network: Schema.Number,
+    buttonIndex: Schema.Literal(1, 2, 3, 4),
+    castId: Schema.Struct({
+      fid: Schema.Number,
+      hash: Schema.String,
+    }),
+    inputText: Schema.optional(Schema.String),
+  }),
+})
 
 const FrameHtml = (chainId: number, hash: Hex) => {
   const explorerUrl =
-    EXPLORER_URLS[chainId as keyof typeof EXPLORER_URLS] || EXPLORER_URLS[1] // Default to mainnet if not found
+    providerConfigs[chainId as keyof typeof providerConfigs].explorerUrl ||
+    providerConfigs[1].explorerUrl // Default to mainnet if not found
   return getFrameHtml({
+    title: "Transaction Frame",
     version: "vNext",
     image: `${process.env.HOST}/interpret/${chainId}/${hash}`,
+    imageAspectRatio: "1.91:1",
     buttons: [
       {
         label: "Refresh",
@@ -56,8 +79,7 @@ export const FrameRoutePost = HttpRouter.post(
   "/frame/:chain/:hash",
   Effect.gen(function* () {
     const params = yield* HttpRouter.params
-    const req = yield* HttpServerRequest.HttpServerRequest
-    const body = (yield* req.json) as FrameActionPayload
+    const body = yield* HttpServerRequest.schemaBodyJson(FrameActionSchema)
 
     if (isNaN(Number(params.chain)) || params.hash == null) {
       return yield* HttpServerResponse.json(

@@ -22,8 +22,6 @@ export const validateMessage = (
         },
       )
 
-      console.log("validateMessageResponse", response)
-
       if (!response.ok) {
         console.log("Failed", await response.text())
       }

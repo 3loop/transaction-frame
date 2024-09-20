@@ -1,9 +1,17 @@
-export const EXPLORER_URLS = {
-  8453: "https://basescan.org/tx",
-  1: "https://etherscan.io/tx",
+export const providerConfigs: Record<number, any> = {
+  1: {
+    rpcUrl: process.env.ETH_RPC_URL,
+    traceAPI: "parity",
+    explorerUrl: "https://etherscan.io/tx",
+    name: "Ethereum",
+  },
+  8453: {
+    rpcUrl: process.env.BASE_RPC_URL,
+    traceAPI: "parity",
+    explorerUrl: "https://basescan.org/tx",
+    name: "Base",
+  },
 }
 
-export const chainIdToName: Record<number, string> = {
-  1: "Ethereum",
-  8453: "Base",
-} as const
+export const IMG_WIDTH = 1200
+export const IMG_HEIGHT = 628
