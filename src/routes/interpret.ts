@@ -4,6 +4,54 @@ import { Effect, Either } from "effect"
 import { Hex } from "viem"
 import { interpretTransaction } from "../interpreter"
 import { drawFrame } from "../image-frame"
+import { getFarcasterUserInfoByAddress } from "@/utils/airstack"
+import { InterpretedTransaction } from "@3loop/transaction-interpreter"
+import { TxContext } from "@/types"
+
+function getTxContext(
+  tx: InterpretedTransaction,
+): Effect.Effect<TxContext, Error> {
+  return Effect.gen(function* () {
+    const fromAddress: string | null = tx.user.address.toLowerCase()
+    const toAddress: string | null =
+      tx.type === "swap"
+        ? tx.assetsReceived?.[0]?.to?.address?.toLowerCase()
+        : tx.type === "transfer-token"
+          ? tx.assetsSent?.[0]?.to?.address?.toLowerCase()
+          : null
+
+    if (fromAddress == null && toAddress == null) {
+      return {
+        from: null,
+        to: null,
+      }
+    }
+
+    if (fromAddress === toAddress || toAddress == null) {
+      //get the user info for the address
+      const userInfo = yield* getFarcasterUserInfoByAddress(fromAddress)
+      return {
+        from: userInfo,
+        to: null,
+      }
+    }
+
+    const [fromInfo, toInfo] = yield* Effect.all(
+      [
+        getFarcasterUserInfoByAddress(fromAddress),
+        getFarcasterUserInfoByAddress(toAddress),
+      ],
+      {
+        concurrency: "unbounded",
+      },
+    )
+
+    return {
+      from: fromInfo,
+      to: toInfo,
+    }
+  })
+}
 
 export const InterpretRoute = HttpRouter.get(
   "/interpret/:chain/:hash",
@@ -51,7 +99,9 @@ export const InterpretRoute = HttpRouter.get(
       )
     }
 
-    const image = yield* drawFrame(result.right)
+    const context = yield* getTxContext(result.right)
+
+    const image = yield* drawFrame(result.right, context)
 
     return yield* HttpServerResponse.raw(image).pipe(
       HttpServerResponse.setHeader("Content-Type", "image/png"),

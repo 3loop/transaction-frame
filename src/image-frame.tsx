@@ -8,7 +8,8 @@ import {
 } from "@3loop/transaction-interpreter"
 import { match } from "ts-pattern"
 import { IMG_HEIGHT, IMG_WIDTH, providerConfigs } from "./constants"
-import { resolveTokenIcon } from "./image"
+import { resolveTokenIcon } from "./utils/image"
+import { TxContext } from "./types"
 
 function shortenHash(hash: string) {
   return hash.slice(0, 10) + "..." + hash.slice(-10)
@@ -16,15 +17,53 @@ function shortenHash(hash: string) {
 
 let NumberFormatter = new Intl.NumberFormat("en-US", {})
 
-const FooterColumn: React.FC<{ title: string; description: string }> = ({
-  title,
-  description,
-}) => {
+const WalletProfile: React.FC<{
+  description: string
+  image?: string
+}> = ({ description, image }) => {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        gap: "8px",
+        fontSize: 32, // Match the font size of the description text
+        border: "1px solid rgb(221, 221, 221)",
+        padding: "8px",
+        borderRadius: "32px",
+        lineHeight: "36px",
+      }}
+    >
+      {image && (
+        <img
+          src={image}
+          style={{
+            width: "36px", // Set width to match text height
+            height: "36px", // Set height to match text height
+            borderRadius: "50%",
+            objectFit: "cover",
+            verticalAlign: "middle", // Align the image with the text baseline
+          }}
+        />
+      )}
+      <span>{description}</span>
+    </div>
+  )
+}
+
+const FooterColumn: React.FC<
+  React.PropsWithChildren<{
+    title: string
+  }>
+> = ({ title, children }) => {
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
+        alignItems: "flex-start",
+        gap: "4px",
       }}
     >
       <span
@@ -36,7 +75,7 @@ const FooterColumn: React.FC<{ title: string; description: string }> = ({
       >
         {title}
       </span>
-      <span>{description}</span>
+      {children}
     </div>
   )
 }
@@ -315,9 +354,11 @@ const Content: React.FC<
 const MainComponent = ({
   tx,
   tokenIconMap,
+  context,
 }: {
   tx: InterpretedTransaction
   tokenIconMap: Record<string, string | null>
+  context: TxContext
 }) => {
   return (
     <div
@@ -358,20 +399,34 @@ const MainComponent = ({
         <Content tx={tx} tokenIconMap={tokenIconMap} />
       </div>
       <div style={{ display: "flex", gap: "48px", paddingTop: "16x" }}>
-        <FooterColumn
-          title="Chain:"
-          description={providerConfigs[tx.chain].name}
-        />
-        <FooterColumn
-          title="Transaction Hash:"
-          description={shortenHash(tx.txHash)}
-        />
+        <FooterColumn title="Chain:">
+          <span>{providerConfigs[tx.chain].name}</span>
+        </FooterColumn>
+        <FooterColumn title="Transaction Hash:">
+          <span>{shortenHash(tx.txHash)}</span>
+        </FooterColumn>
+        {context.from?.profileName && (
+          <FooterColumn title="From:">
+            <WalletProfile
+              description={context.from.profileName}
+              image={context.from.profileImage}
+            />
+          </FooterColumn>
+        )}
+        {context.to?.profileName && (
+          <FooterColumn title="To:">
+            <WalletProfile
+              description={context.to.profileName}
+              image={context.to.profileImage}
+            />
+          </FooterColumn>
+        )}
       </div>
     </div>
   )
 }
 
-export const drawFrame = (tx: InterpretedTransaction) =>
+export const drawFrame = (tx: InterpretedTransaction, context: TxContext) =>
   Effect.gen(function* () {
     const tokens = tx.assetsSent.concat(tx.assetsReceived).map((asset) => {
       return asset.asset.address
@@ -392,12 +447,19 @@ export const drawFrame = (tx: InterpretedTransaction) =>
 
     const svg = yield* Effect.tryPromise({
       try: () => {
-        return satori(<MainComponent tx={tx} tokenIconMap={tokenIconMap} />, {
-          width: IMG_WIDTH,
-          height: IMG_HEIGHT,
-          fonts: fonts,
-          embedFont: true,
-        })
+        return satori(
+          <MainComponent
+            tx={tx}
+            tokenIconMap={tokenIconMap}
+            context={context}
+          />,
+          {
+            width: IMG_WIDTH,
+            height: IMG_HEIGHT,
+            fonts: fonts,
+            embedFont: true,
+          },
+        )
       },
       catch: (error) => {
         console.error(error)
