@@ -20,7 +20,7 @@ export const TracingLive = Layer.unwrapEffect(
     if (apiKey._tag === "Some") {
       const headers = {
         "X-Honeycomb-Team": apiKey.value,
-        "X-Honeycomb-Dataset": apiKey.value,
+        "X-Honeycomb-Dataset": dataset,
       }
       traceExporterConfig = {
         url: "https://api.honeycomb.io/v1/traces",

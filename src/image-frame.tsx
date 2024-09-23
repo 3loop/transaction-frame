@@ -8,7 +8,7 @@ import {
 } from "@3loop/transaction-interpreter"
 import { match } from "ts-pattern"
 import { IMG_HEIGHT, IMG_WIDTH, providerConfigs } from "./constants"
-import { resolveTokenIcon } from "./utils/image"
+import { resolveToJpeg, resolveTokenIcon } from "./utils/image"
 import { TxContext } from "./types"
 
 function shortenHash(hash: string) {
@@ -445,6 +445,16 @@ export const drawFrame = (tx: InterpretedTransaction, context: TxContext) =>
       {} as Record<string, string | null>,
     )
 
+    if (context.from?.profileImage) {
+      context.from.profileImage = yield* resolveToJpeg(
+        context.from.profileImage,
+      )
+    }
+
+    if (context.to?.profileImage) {
+      context.to.profileImage = yield* resolveToJpeg(context.to.profileImage)
+    }
+
     const svg = yield* Effect.tryPromise({
       try: () => {
         return satori(
@@ -467,7 +477,7 @@ export const drawFrame = (tx: InterpretedTransaction, context: TxContext) =>
     })
 
     const resvg = new Resvg(svg, {
-      fitTo: { mode: "width", value: 2400 },
+      fitTo: { mode: "width", value: 1200 * 1.5 },
     })
     const pngData = resvg.render()
 

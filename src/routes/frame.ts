@@ -79,7 +79,10 @@ export const FrameRoutePost = HttpRouter.post(
   "/frame/:chain/:hash",
   Effect.gen(function* () {
     const params = yield* HttpRouter.params
-    const body = yield* HttpServerRequest.schemaBodyJson(FrameActionSchema)
+    // TODO: check the correctness of the schema
+    // const body = yield* HttpServerRequest.schemaBodyJson(FrameActionSchema)
+    const req = yield* HttpServerRequest.HttpServerRequest
+    const body = (yield* req.json) as FrameActionPayload
 
     if (isNaN(Number(params.chain)) || params.hash == null) {
       return yield* HttpServerResponse.json(

@@ -44,6 +44,7 @@
     "quickjs-emscripten": "^0.31.0",
     "react": "^18.3.1",
     "satori": "^0.11.1",
+    "sharp": "^0.33.5",
     "ts-pattern": "^5.3.1",
     "viem": "^2.21.10"
   },
