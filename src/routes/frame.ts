@@ -96,7 +96,8 @@ export const FrameRoutePost = HttpRouter.post(
     }
 
     // TODO: validate message
-    yield* validateMessage(body)
+    const isValid = yield* validateMessage(body)
+    console.log("is valid", isValid)
 
     return yield* HttpServerResponse.html(
       FrameHtml(Number(params.chain), params.hash as Hex),
