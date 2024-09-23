@@ -1,16 +1,23 @@
-# Decoder REST API
+# Transaction View Frame
 
-This project provides a Farcaster Frame to display EVM transactions. It is built on top of the [Loop Decoder](https://github.com/3loop/loop-decoder) library.
+This project provides a Farcaster frame for displaying EVM transactions. It is built on top of the [Loop Decoder](https://github.com/3loop/loop-decoder) - an open source library for transforming EVM transactions into a human readable format.
+
+Example frame [link](https://warpcast.com/alertsbot/0x4b783349):
+
+<img width="481" alt="Screenshot 2024-09-23 at 17 35 40" src="https://github.com/user-attachments/assets/90690d8b-1190-474a-ae89-019741c06ef9">
+
 
 ## Endpoints
 
-**Interpreting Endpoint** `/interpret/:chain/:hash` - This endpoint provides a human-readable transaction image from the transaction hash.
+- **Frame Endpoint** `/frame/:chain/:hash` - This endpoint provides a Farcaster frame metadata with a transaction image from the transaction hash.
+
+- **Interpreting Endpoint** `/interpret/:chain/:hash` - This endpoint provides a human-readable transaction image from the transaction hash.
 
 ## Database
 
 This project uses SQLite as its database. At a minimum, you need to provide the WETH contract metadata. Other public contracts can be resolved using third-party strategies.
 
-If you need a database snapshot for Ethereum Mainnet that includes common contracts metadata and contracts ABIs, please contact us on [X](https://x.com/3loop_io).
+If you need a database snapshot for Ethereum Mainnet that includes common contracts metadata and contracts ABIs, please contact us on [Farcaster](https://warpcast.com/nastya) or [X](https://x.com/3loop_io).
 
 ## Requirements
 
