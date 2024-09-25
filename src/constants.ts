@@ -15,3 +15,4 @@ export const providerConfigs: Record<number, any> = {
 
 export const IMG_WIDTH = 1200
 export const IMG_HEIGHT = 628
+export const GITHUB_URL = "https://github.com/3loop/transaction-frame"

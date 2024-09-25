@@ -42,7 +42,8 @@
     "effect": "3.8.2",
     "frames.js": "^0.19.2",
     "quickjs-emscripten": "^0.31.0",
-    "react": "^18.3.1",
+    "react": "^19.0.0-rc-04bd67a4-20240924",
+    "react-dom": "^19.0.0-rc-04bd67a4-20240924",
     "satori": "^0.11.1",
     "sharp": "^0.33.5",
     "ts-pattern": "^5.3.1",
@@ -51,6 +52,7 @@
   "devDependencies": {
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/bun": "^1.1.9",
+    "@types/react-dom": "^18.3.0",
     "better-sqlite3": "^11.3.0",
     "drizzle-kit": "^0.24.2",
     "prettier": "^3.3.3",

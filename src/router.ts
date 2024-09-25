@@ -33,6 +33,22 @@ export const HttpLive = HttpRouter.empty.pipe(
       })
     }),
   ),
+  Effect.catchTag("ParseError", (error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError("ParseError", error)
+      return HttpServerResponse.text(error.message, {
+        status: 400,
+      })
+    }),
+  ),
+  Effect.catchTag("RequestError", (error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError("RequestError", error)
+      return HttpServerResponse.text(error.message, {
+        status: 400,
+      })
+    }),
+  ),
   Effect.catchAll((error) =>
     Effect.gen(function* () {
       yield* Effect.logError("Error", error)

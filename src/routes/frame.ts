@@ -5,10 +5,11 @@ import {
   HttpServerRequest,
   HttpServerResponse,
 } from "@effect/platform"
-import { Effect } from "effect"
-import { getFrameHtml, FrameActionPayload } from "frames.js"
+import { Effect, pipe } from "effect"
+import { Frame, getFrameHtml } from "frames.js"
 import { Hex } from "viem"
 import { Schema } from "@effect/schema"
+import { renderFrame } from "@/pages/frame"
 
 const FrameActionSchema = Schema.Struct({
   trustedData: Schema.Struct({
@@ -29,11 +30,11 @@ const FrameActionSchema = Schema.Struct({
   }),
 })
 
-const FrameHtml = (chainId: number, hash: Hex) => {
+const InitialFrame = (chainId: number, hash: Hex) => {
   const explorerUrl =
     providerConfigs[chainId as keyof typeof providerConfigs].explorerUrl ||
     providerConfigs[1].explorerUrl // Default to mainnet if not found
-  return getFrameHtml({
+  return {
     title: "Transaction Frame",
     version: "vNext",
     image: `${process.env.HOST}/interpret/${chainId}/${hash}`,
@@ -50,7 +51,7 @@ const FrameHtml = (chainId: number, hash: Hex) => {
         target: `${explorerUrl}/${hash}`,
       },
     ],
-  })
+  } as Frame
 }
 
 export const FrameRouteGet = HttpRouter.get(
@@ -69,9 +70,14 @@ export const FrameRouteGet = HttpRouter.get(
       )
     }
 
-    return yield* HttpServerResponse.html(
-      FrameHtml(Number(params.chain), params.hash as Hex),
+    const stream = yield* Effect.promise(() =>
+      renderFrame(
+        `${process.env.HOST}/interpret/${Number(params.chain)}/${params.hash}`,
+        InitialFrame(Number(params.chain), params.hash as Hex),
+      ),
     )
+
+    return yield* HttpServerResponse.raw(stream)
   }),
 )
 
@@ -79,10 +85,6 @@ export const FrameRoutePost = HttpRouter.post(
   "/frame/:chain/:hash",
   Effect.gen(function* () {
     const params = yield* HttpRouter.params
-    // TODO: check the correctness of the schema
-    // const body = yield* HttpServerRequest.schemaBodyJson(FrameActionSchema)
-    const req = yield* HttpServerRequest.HttpServerRequest
-    const body = (yield* req.json) as FrameActionPayload
 
     if (isNaN(Number(params.chain)) || params.hash == null) {
       return yield* HttpServerResponse.json(
@@ -95,12 +97,13 @@ export const FrameRoutePost = HttpRouter.post(
       )
     }
 
-    // TODO: validate message
+    const body = yield* HttpServerRequest.schemaBodyJson(FrameActionSchema)
+
     const isValid = yield* validateMessage(body)
     console.log("is valid", isValid)
 
     return yield* HttpServerResponse.html(
-      FrameHtml(Number(params.chain), params.hash as Hex),
+      getFrameHtml(InitialFrame(Number(params.chain), params.hash as Hex)),
     )
   }),
 )
