@@ -2,7 +2,7 @@
 
 This project provides a Farcaster frame for displaying EVM transactions. It is built on top of the [Loop Decoder](https://github.com/3loop/loop-decoder) - an open source library for transforming EVM transactions into a human readable format.
 
-Example frame [link](https://warpcast.com/alertsbot/0x4b783349):
+Example frame [link](https://decoder-frame.fly.dev/frame/8453/0x338447269f00f845de2c0a544282892d9566f7d17373225a623c69f10a3abea2):
 
 <img width="481" alt="Screenshot 2024-09-23 at 17 35 40" src="https://github.com/user-attachments/assets/90690d8b-1190-474a-ae89-019741c06ef9">
 
