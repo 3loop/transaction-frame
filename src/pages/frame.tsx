@@ -8,11 +8,8 @@ import {
 } from "frames.js"
 import { GITHUB_URL } from "../constants"
 
-export function getFrameHead(
-  frame: Partial<Frame>,
-  overrides?: Partial<FrameFlattened>,
-): React.ReactNode[] {
-  const flattened = getFrameFlattened(frame, overrides)
+export function getFrameHead(frame: Partial<Frame>): React.ReactNode[] {
+  const flattened = getFrameFlattened(frame)
 
   const tags = Object.entries(flattened)
     .map(([key, value]) => {

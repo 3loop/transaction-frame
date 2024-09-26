@@ -72,7 +72,7 @@ export const FrameRouteGet = HttpRouter.get(
 
     const stream = yield* Effect.promise(() =>
       renderFrame(
-        `${process.env.HOST}/interpret/${Number(params.chain)}/${params.hash}`,
+        `/interpret/${Number(params.chain)}/${params.hash}`,
         InitialFrame(Number(params.chain), params.hash as Hex),
       ),
     )
