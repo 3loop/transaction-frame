@@ -6,7 +6,7 @@ import {
   AssetTransfer,
   InterpretedTransaction,
 } from "@3loop/transaction-interpreter"
-import { match } from "ts-pattern"
+import { match, P } from "ts-pattern"
 import { IMG_HEIGHT, IMG_WIDTH, providerConfigs } from "./constants"
 import { resolveToJpeg, resolveTokenIcon } from "./utils/image"
 import { TxContext } from "./types"
@@ -296,37 +296,72 @@ const Content: React.FC<
         background: "rgb(221, 221, 221)",
       }}
     >
-      {match(tx.type).otherwise(() => (
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            gap: "24px",
-          }}
-        >
-          <TokenColumn>
-            {tx.assetsSent.map((asset) => (
-              <Asset
-                key={asset.asset.address}
-                transfer={asset}
-                url={tokenIconMap[asset.asset.address]}
-                label="Sent:"
-              />
-            ))}
-          </TokenColumn>
-          <Separator vertical />
-          <TokenColumn>
-            {tx.assetsReceived.map((asset) => (
-              <Asset
-                key={asset.asset.address}
-                url={tokenIconMap[asset.asset.address]}
-                transfer={asset}
-                label="Received:"
-              />
-            ))}
-          </TokenColumn>
-        </div>
-      ))}
+      {match(tx.type)
+        .with(P.union("transfer-token", "transfer-nft"), () => (
+          <div
+            style={{
+              display: "flex",
+              flex: 1,
+              gap: "24px",
+            }}
+          >
+            {tx.assetsSent.length > 0 ? (
+              <TokenColumn>
+                {tx.assetsSent.map((asset) => (
+                  <Asset
+                    key={asset.asset.address}
+                    transfer={asset}
+                    url={tokenIconMap[asset.asset.address]}
+                    label="Sent:"
+                  />
+                ))}
+              </TokenColumn>
+            ) : null}
+            {tx.assetsReceived.length > 0 ? (
+              <TokenColumn>
+                {tx.assetsReceived.map((asset) => (
+                  <Asset
+                    key={asset.asset.address}
+                    url={tokenIconMap[asset.asset.address]}
+                    transfer={asset}
+                    label="Received:"
+                  />
+                ))}
+              </TokenColumn>
+            ) : null}
+          </div>
+        ))
+        .otherwise(() => (
+          <div
+            style={{
+              display: "flex",
+              flex: 1,
+              gap: "24px",
+            }}
+          >
+            <TokenColumn>
+              {tx.assetsSent.map((asset) => (
+                <Asset
+                  key={asset.asset.address}
+                  transfer={asset}
+                  url={tokenIconMap[asset.asset.address]}
+                  label="Sent:"
+                />
+              ))}
+            </TokenColumn>
+            <Separator vertical />
+            <TokenColumn>
+              {tx.assetsReceived.map((asset) => (
+                <Asset
+                  key={asset.asset.address}
+                  url={tokenIconMap[asset.asset.address]}
+                  transfer={asset}
+                  label="Received:"
+                />
+              ))}
+            </TokenColumn>
+          </div>
+        ))}
     </div>
   )
 }
