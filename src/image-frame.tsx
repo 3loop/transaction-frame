@@ -10,6 +10,13 @@ import { match } from "ts-pattern"
 import { IMG_HEIGHT, IMG_WIDTH, providerConfigs } from "./constants"
 import { resolveToJpeg, resolveTokenIcon } from "./utils/image"
 import { TxContext } from "./types"
+import {
+  APPROVE_ICON,
+  BURN_ICON,
+  OTHER_ICON,
+  SWAP_ICON,
+  TRANSFER_ICON,
+} from "./satori-components/icons"
 
 function shortenHash(hash: string) {
   return hash.slice(0, 10) + "..." + hash.slice(-10)
@@ -162,65 +169,36 @@ const Asset: React.FC<{
   )
 }
 
-const TX_TYPE_TO_ICON: Record<string, JSX.Element> = {
-  swap: (
-    <svg
-      width="200"
-      height="200"
-      viewBox="0 0 277 277"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M164.469 25.9688L225.063 86.5625L164.469 147.156M215.795 86.5625H51.9375M112.531 251.031L51.9375 190.438L112.531 129.844M61.6758 190.438H225.063"
-        stroke="rgb(98, 114, 84)"
-        stroke-width="35"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    </svg>
-  ),
-  other: (
-    <svg
-      width="200"
-      height="200"
-      viewBox="0 0 200 200"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M143.75 162.445V28.125C143.743 25.6408 142.753 23.2604 140.996 21.5038C139.24 19.7473 136.859 18.7572 134.375 18.75H28.125C25.6408 18.7572 23.2604 19.7473 21.5038 21.5038C19.7473 23.2604 18.7572 25.6408 18.75 28.125V165.625C18.7624 169.765 20.4125 173.732 23.3401 176.66C26.2677 179.587 30.2348 181.238 34.375 181.25H162.5"
-        stroke="rgb(98, 114, 84)"
-        stroke-width="12"
-        stroke-linejoin="round"
-      />
-      <path
-        d="M162.5 181.25C157.527 181.25 152.758 179.275 149.242 175.758C145.725 172.242 143.75 167.473 143.75 162.5V50H171.875C174.361 50 176.746 50.9877 178.504 52.7459C180.262 54.504 181.25 56.8886 181.25 59.375V162.5C181.25 167.473 179.275 172.242 175.758 175.758C172.242 179.275 167.473 181.25 162.5 181.25Z"
-        stroke="rgb(98, 114, 84)"
-        stroke-width="12"
-        stroke-linejoin="round"
-      />
-      <path
-        d="M93.75 50H118.75M93.75 75H118.75M43.75 100H118.75M43.75 125H118.75M43.75 150H118.75"
-        stroke="rgb(98, 114, 84)"
-        stroke-width="12"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-      <path
-        d="M68.75 81.25H43.75C42.0924 81.25 40.5027 80.5915 39.3306 79.4194C38.1585 78.2473 37.5 76.6576 37.5 75V50C37.5 48.3424 38.1585 46.7527 39.3306 45.5806C40.5027 44.4085 42.0924 43.75 43.75 43.75H68.75C70.4076 43.75 71.9973 44.4085 73.1694 45.5806C74.3415 46.7527 75 48.3424 75 50V75C75 76.6576 74.3415 78.2473 73.1694 79.4194C71.9973 80.5915 70.4076 81.25 68.75 81.25Z"
-        fill="rgb(98, 114, 84)"
-      />
-    </svg>
-  ),
+type InterpretedTransactionType = InterpretedTransaction["type"]
+
+const TX_TYPE_TO_ICON: Record<InterpretedTransactionType, JSX.Element> = {
+  swap: SWAP_ICON,
+  "transfer-token": TRANSFER_ICON,
+  "transfer-nft": TRANSFER_ICON,
+  "approve-token": APPROVE_ICON,
+  "approve-nft": APPROVE_ICON,
+  burn: BURN_ICON,
+
+  borrow: OTHER_ICON,
+  "deposit-collateral": OTHER_ICON,
+  "repay-loan": OTHER_ICON,
+  "send-to-bridge": OTHER_ICON,
+  "receive-from-bridge": OTHER_ICON,
+  "stake-token": OTHER_ICON,
+  "unstake-token": OTHER_ICON,
+  "withdraw-collateral": OTHER_ICON,
+  wrap: OTHER_ICON,
+  unwrap: OTHER_ICON,
+  "account-abstraction": OTHER_ICON,
+  unknown: OTHER_ICON,
 }
 
-function getIconForTxType(txType: string) {
-  return TX_TYPE_TO_ICON[txType] || TX_TYPE_TO_ICON["other"]
+function getIconForTxType(txType: InterpretedTransactionType) {
+  return TX_TYPE_TO_ICON[txType] || TX_TYPE_TO_ICON["unknown"]
 }
 
-function getNameForTxType(txType: string) {
-  const txTypeToName: Record<string, string> = {
+function getNameForTxType(txType: InterpretedTransactionType) {
+  const txTypeToName: Record<InterpretedTransactionType, string> = {
     "repay-loan": "Repay",
     "deposit-collateral": "Collateral",
     borrow: "Borrow",
@@ -237,6 +215,8 @@ function getNameForTxType(txType: string) {
     "account-abstraction": "AA",
     "stake-token": "Stake",
     "unstake-token": "Unstake",
+    burn: "Burn",
+    unknown: "Unknown",
   }
 
   return txTypeToName[txType] || "Other"
