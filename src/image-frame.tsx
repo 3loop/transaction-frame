@@ -296,49 +296,15 @@ const Content: React.FC<
         background: "rgb(221, 221, 221)",
       }}
     >
-      {match(tx.type)
-        .with(P.union("transfer-token", "transfer-nft"), () => (
-          <div
-            style={{
-              display: "flex",
-              flex: 1,
-              gap: "24px",
-            }}
-          >
-            {tx.assetsSent.length > 0 ? (
-              <TokenColumn>
-                {tx.assetsSent.map((asset) => (
-                  <Asset
-                    key={asset.asset.address}
-                    transfer={asset}
-                    url={tokenIconMap[asset.asset.address]}
-                    label="Sent:"
-                  />
-                ))}
-              </TokenColumn>
-            ) : null}
-            {tx.assetsReceived.length > 0 ? (
-              <TokenColumn>
-                {tx.assetsReceived.map((asset) => (
-                  <Asset
-                    key={asset.asset.address}
-                    url={tokenIconMap[asset.asset.address]}
-                    transfer={asset}
-                    label="Received:"
-                  />
-                ))}
-              </TokenColumn>
-            ) : null}
-          </div>
-        ))
-        .otherwise(() => (
-          <div
-            style={{
-              display: "flex",
-              flex: 1,
-              gap: "24px",
-            }}
-          >
+      {match(tx.type).otherwise(() => (
+        <div
+          style={{
+            display: "flex",
+            flex: 1,
+            gap: "24px",
+          }}
+        >
+          {tx.assetsSent.length > 0 ? (
             <TokenColumn>
               {tx.assetsSent.map((asset) => (
                 <Asset
@@ -349,7 +315,11 @@ const Content: React.FC<
                 />
               ))}
             </TokenColumn>
+          ) : null}
+          {tx.assetsReceived.length > 0 && tx.assetsSent.length > 0 ? (
             <Separator vertical />
+          ) : null}
+          {tx.assetsReceived.length > 0 ? (
             <TokenColumn>
               {tx.assetsReceived.map((asset) => (
                 <Asset
@@ -360,8 +330,9 @@ const Content: React.FC<
                 />
               ))}
             </TokenColumn>
-          </div>
-        ))}
+          ) : null}
+        </div>
+      ))}
     </div>
   )
 }
