@@ -418,10 +418,23 @@ export const drawFrame = (tx: InterpretedTransaction, context: TxContext) =>
       return asset.asset.address
     })
 
+    const tokenRequests = tokens.map(resolveTokenIcon)
+
     // NOTE: Satori will crash if the image is not found, thus we need to resolve the image first
-    const tokenIcons = yield* Effect.all(tokens.map(resolveTokenIcon), {
-      concurrency: "unbounded",
-    })
+    const [fromProfileImage, toProfileImage, ...tokenIcons] = yield* Effect.all(
+      [
+        context.from?.profileImage
+          ? resolveToJpeg(context.from.profileImage)
+          : Effect.succeed(null),
+        context.to?.profileImage
+          ? resolveToJpeg(context.to.profileImage)
+          : Effect.succeed(null),
+        ...tokenRequests,
+      ],
+      {
+        concurrency: "unbounded",
+      },
+    )
 
     const tokenIconMap = tokens.reduce(
       (acc, address, index) => {
@@ -431,14 +444,11 @@ export const drawFrame = (tx: InterpretedTransaction, context: TxContext) =>
       {} as Record<string, string | null>,
     )
 
-    if (context.from?.profileImage) {
-      const image = yield* resolveToJpeg(context.from.profileImage)
-      if (image) context.from.profileImage = image
+    if (context.from?.profileImage && fromProfileImage) {
+      context.from.profileImage = fromProfileImage
     }
-
-    if (context.to?.profileImage) {
-      const image = yield* resolveToJpeg(context.to.profileImage)
-      if (image) context.to.profileImage = image
+    if (context.to?.profileImage && toProfileImage) {
+      context.to.profileImage = toProfileImage
     }
 
     const svg = yield* Effect.tryPromise({
