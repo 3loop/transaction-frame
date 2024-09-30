@@ -7,6 +7,17 @@ import { drawFrame } from "../image-frame"
 import { getFarcasterUserInfoByAddress } from "@/utils/airstack"
 import { InterpretedTransaction } from "@3loop/transaction-interpreter"
 import { TxContext } from "@/types"
+import { generateHeapSnapshot } from "bun";
+
+async function getMemorySnapshot() {
+  const mem = process.memoryUsage()
+
+  // If memory usage is more than 90% of the heap limit, take a snapshot
+  if (mem.heapUsed / mem.heapTotal > 0.8) {
+    const snapshot = generateHeapSnapshot();
+    await Bun.write("./heap.json", JSON.stringify(snapshot, null, 2));
+  }
+}
 
 function getTxContext(
   tx: InterpretedTransaction,
@@ -102,6 +113,8 @@ export const InterpretRoute = HttpRouter.get(
     const context = yield* getTxContext(result.right)
 
     const image = yield* drawFrame(result.right, context)
+
+    yield* Effect.try(getMemorySnapshot);
 
     return yield* HttpServerResponse.raw(image).pipe(
       HttpServerResponse.setHeader("Content-Type", "image/png"),

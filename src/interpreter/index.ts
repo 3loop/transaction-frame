@@ -1,17 +1,12 @@
 import { DecodedTx } from "@3loop/transaction-decoder"
 import {
-  QuickjsConfig,
-  QuickjsInterpreterLive,
+  EvalInterpreterLive,
   TransactionInterpreter,
   fallbackInterpreter,
 } from "@3loop/transaction-interpreter"
-import { Effect, Layer } from "effect"
+import { Effect } from "effect"
 
-const config = Layer.succeed(QuickjsConfig, {
-  runtimeConfig: { timeout: 5000 },
-})
-
-export const InterpreterLive = Layer.provide(QuickjsInterpreterLive, config)
+export const InterpreterLive = EvalInterpreterLive
 
 export const interpretTransaction = (decodedTx: DecodedTx) =>
   Effect.gen(function* () {
