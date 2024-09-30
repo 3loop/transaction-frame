@@ -432,13 +432,13 @@ export const drawFrame = (tx: InterpretedTransaction, context: TxContext) =>
     )
 
     if (context.from?.profileImage) {
-      context.from.profileImage = yield* resolveToJpeg(
-        context.from.profileImage,
-      )
+      const image = yield* resolveToJpeg(context.from.profileImage)
+      if (image) context.from.profileImage = image
     }
 
     if (context.to?.profileImage) {
-      context.to.profileImage = yield* resolveToJpeg(context.to.profileImage)
+      const image = yield* resolveToJpeg(context.to.profileImage)
+      if (image) context.to.profileImage = image
     }
 
     const svg = yield* Effect.tryPromise({
