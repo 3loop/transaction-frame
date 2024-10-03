@@ -9,6 +9,7 @@ const loadFont = async (fileName: string) => {
     return fontData;
   } catch (error) {
     console.error('Error reading font file:', error);
+    throw error;
   }
 }
 

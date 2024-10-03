@@ -477,5 +477,5 @@ export const drawFrame = (tx: InterpretedTransaction, context: TxContext) =>
     })
     const pngData = resvg.render()
 
-    return pngData.asPng().buffer as ArrayBuffer
+    return pngData.asPng().buffer
   }).pipe(Effect.withSpan("drawFrame"))

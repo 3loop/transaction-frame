@@ -1,4 +1,4 @@
-import { BunHttpServer, BunRuntime } from "@effect/platform-bun"
+import { BunFileSystem, BunHttpServer, BunPath, BunRuntime } from "@effect/platform-bun"
 
 import * as Dotenv from "dotenv"
 import { Config, Effect, Layer, LogLevel, Logger, Request } from "effect"
@@ -9,6 +9,7 @@ import { RPCProviderLive } from "./decoder/provider"
 import { HttpLive } from "./router"
 import { TracingLive } from "./tracing"
 import { FetchHttpClient } from '@effect/platform'
+import { InterpreterLive } from "./interpreter"
 
 Dotenv.config()
 
@@ -32,7 +33,10 @@ const MainLive = Layer.provide(
   Layer.provide(Logger.logFmt),
   Layer.provide(DecoderLayer),
   Layer.provide(TracingLive),
-  Layer.provide(FetchHttpClient.layer)
+  Layer.provide(FetchHttpClient.layer),
+  Layer.provide(InterpreterLive),
+  Layer.provide(BunFileSystem.layer),
+  Layer.provide(BunPath.layer),
 )
 
 const cache = Effect.provide(
