@@ -444,11 +444,13 @@ export const drawFrame = (tx: InterpretedTransaction, context: TxContext) =>
       {} as Record<string, string | null>,
     )
 
-    if (context.from?.profileImage && fromProfileImage) {
-      context.from.profileImage = fromProfileImage
+
+    if (context.from) {
+      context.from.profileImage = fromProfileImage ? fromProfileImage : undefined
     }
-    if (context.to?.profileImage && toProfileImage) {
-      context.to.profileImage = toProfileImage
+
+    if (context.to) {
+      context.to.profileImage = toProfileImage ? toProfileImage : undefined
     }
 
     const svg = yield* Effect.tryPromise({
