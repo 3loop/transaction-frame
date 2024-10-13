@@ -18,8 +18,8 @@
   "keywords": [],
   "author": "3loop",
   "dependencies": {
-    "@3loop/transaction-decoder": "^0.18.0",
-    "@3loop/transaction-interpreter": "^0.8.0",
+    "@3loop/transaction-decoder": "^0.19.0",
+    "@3loop/transaction-interpreter": "^0.10.0",
     "@effect/opentelemetry": "^0.37.4",
     "@effect/platform": "^0.65.5",
     "@effect/platform-bun": "^0.45.5",
@@ -44,7 +44,7 @@
     "quickjs-emscripten": "^0.31.0",
     "react": "^19.0.0-rc-fb9a90fa48-20240614",
     "react-dom": "^19.0.0-rc-fb9a90fa48-20240614",
-    "satori": "^0.11.1",
+    "satori": "0.11.1",
     "sharp": "^0.33.5",
     "ts-pattern": "^5.4.0",
     "viem": "^2.21.16"

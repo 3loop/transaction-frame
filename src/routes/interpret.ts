@@ -7,7 +7,7 @@ import {
 import { Effect, Either } from "effect"
 import { Hex } from "viem"
 import { interpretTransaction } from "../interpreter"
-import { drawFrame } from "../image-frame"
+import { drawErrorFrame, drawFrame } from "../image-frame"
 import { getFarcasterUserInfoByAddress } from "@/utils/airstack"
 import { InterpretedTransaction } from "@3loop/transaction-interpreter"
 import { TxContext } from "@/types"
@@ -103,13 +103,8 @@ const interpretAndGenerateImage = ({
 
     if (Either.isLeft(decoded)) {
       yield* Effect.logError("Decode failed", decoded.left)
-      return yield* HttpServerResponse.json(
-        {
-          error: "Failed to decode transaction",
-        },
-        {
-          status: 400,
-        },
+      return yield* drawErrorFrame(
+        `Couldn't decode this transaction, try another one`,
       )
     }
 
@@ -117,13 +112,8 @@ const interpretAndGenerateImage = ({
 
     if (Either.isLeft(result)) {
       yield* Effect.logError("Interpret failed", result.left)
-      return yield* HttpServerResponse.json(
-        {
-          error: "Failed to interpret transaction",
-        },
-        {
-          status: 400,
-        },
+      return yield* drawErrorFrame(
+        `Couldn't interpret this transaction, try another one`,
       )
     }
 

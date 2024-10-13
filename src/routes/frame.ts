@@ -5,7 +5,7 @@ import {
   HttpServerRequest,
   HttpServerResponse,
 } from "@effect/platform"
-import { Effect, pipe } from "effect"
+import { Effect } from "effect"
 import { Frame, getFrameHtml } from "frames.js"
 import { Hex } from "viem"
 import { Schema } from "@effect/schema"
@@ -30,25 +30,37 @@ const FrameActionSchema = Schema.Struct({
   }),
 })
 
-const InitialFrame = (chainId: number, hash: Hex) => {
+const TransactionFrame = (chainId: number, hash: Hex) => {
   const explorerUrl =
     providerConfigs[chainId as keyof typeof providerConfigs].explorerUrl ||
     providerConfigs[1].explorerUrl // Default to mainnet if not found
+
+  const frameUrl = `${process.env.HOST}/frame/${chainId}/${hash}`
+  const queryParams = new URLSearchParams()
+  queryParams.append("embeds[]", frameUrl)
+  const shareUrl = `https://warpcast.com/~/compose?${queryParams.toString()}`
   return {
     title: "Transaction Frame",
     version: "vNext",
     image: `${process.env.HOST}/interpret/${chainId}/${hash}`,
+    ogImage: `${process.env.HOST}/interpret/${chainId}/${hash}`,
     imageAspectRatio: "1.91:1",
+    inputText: "Enter transaction hash",
     buttons: [
       {
-        label: "Refresh",
+        label: "Search",
         action: "post",
-        post_url: `${process.env.HOST}/frame/${chainId}/${hash}`,
+        post_url: frameUrl,
       },
       {
         label: "Explorer",
         action: "link",
         target: `${explorerUrl}/${hash}`,
+      },
+      {
+        label: "Share",
+        action: "link",
+        target: shareUrl,
       },
     ],
   } as Frame
@@ -73,7 +85,7 @@ export const FrameRouteGet = HttpRouter.get(
     const stream = yield* Effect.promise(() =>
       renderFrame(
         `/interpret/${Number(params.chain)}/${params.hash}`,
-        InitialFrame(Number(params.chain), params.hash as Hex),
+        TransactionFrame(Number(params.chain), params.hash as Hex),
       ),
     )
 
@@ -100,10 +112,27 @@ export const FrameRoutePost = HttpRouter.post(
     const body = yield* HttpServerRequest.schemaBodyJson(FrameActionSchema)
 
     const isValid = yield* validateMessage(body)
-    console.log("is valid", isValid)
+    const buttonIndex = body.untrustedData.buttonIndex
+    const inputText = body.untrustedData.inputText
+
+    if (buttonIndex === 1 && inputText) {
+      const isValidHash = /^0x[a-fA-F0-9]{64}$/.test(inputText)
+      if (!isValidHash) {
+        //ignore wrong input for now
+        return yield* HttpServerResponse.html(
+          getFrameHtml(
+            TransactionFrame(Number(params.chain), params.hash as Hex),
+          ),
+        )
+      }
+      // If valid, you can proceed with using the inputText as the new hash
+      return yield* HttpServerResponse.html(
+        getFrameHtml(TransactionFrame(Number(params.chain), inputText as Hex)),
+      )
+    }
 
     return yield* HttpServerResponse.html(
-      getFrameHtml(InitialFrame(Number(params.chain), params.hash as Hex)),
+      getFrameHtml(TransactionFrame(Number(params.chain), params.hash as Hex)),
     )
   }),
 )

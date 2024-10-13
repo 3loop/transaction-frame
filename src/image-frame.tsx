@@ -3,8 +3,8 @@ import satori from "satori"
 import { Resvg } from "@resvg/resvg-js"
 import { fonts } from "./fonts"
 import {
-  AssetTransfer,
   InterpretedTransaction,
+  Payment,
 } from "@3loop/transaction-interpreter"
 import { match, P } from "ts-pattern"
 import { IMG_HEIGHT, IMG_WIDTH, providerConfigs } from "./constants"
@@ -88,7 +88,7 @@ const FooterColumn: React.FC<
 }
 
 const Asset: React.FC<{
-  transfer: AssetTransfer
+  transfer: Payment
   label: string
   url: string | null
 }> = ({ transfer, label, url }) => {
@@ -151,7 +151,9 @@ const Asset: React.FC<{
                 lineHeight: "40px",
               }}
             >
-              {transfer.asset.symbol}
+              {transfer.asset.type === "ERC20"
+                ? transfer.asset.symbol
+                : transfer.asset.name}
             </span>
           </div>
         </div>
@@ -172,6 +174,8 @@ const Asset: React.FC<{
 type InterpretedTransactionType = InterpretedTransaction["type"]
 
 const TX_TYPE_TO_ICON: Record<InterpretedTransactionType, JSX.Element> = {
+  mint: TRANSFER_ICON,
+  batch: OTHER_ICON,
   swap: SWAP_ICON,
   "transfer-token": TRANSFER_ICON,
   "transfer-nft": TRANSFER_ICON,
@@ -199,6 +203,8 @@ function getIconForTxType(txType: InterpretedTransactionType) {
 
 function getNameForTxType(txType: InterpretedTransactionType) {
   const txTypeToName: Record<InterpretedTransactionType, string> = {
+    mint: "Mint",
+    batch: "Batch",
     "repay-loan": "Repay",
     "deposit-collateral": "Collateral",
     borrow: "Borrow",
@@ -283,6 +289,11 @@ const Content: React.FC<
     tokenIconMap: Record<string, string | null>
   }>
 > = ({ tx, tokenIconMap }) => {
+  const burned = tx.assetsBurned || []
+  const minted = tx.assetsMinted || []
+  const sent = tx.assetsSent.concat(burned).slice(0, 3)
+  const received = tx.assetsReceived.concat(minted).slice(0, 3)
+
   return (
     <div
       style={{
@@ -294,7 +305,7 @@ const Content: React.FC<
         border: "1px solid rgba(0, 0, 0, 0.08)",
         boxShadow: "inset 3px 3px 15px 3px rgba(11, 11, 15, 0.08)",
         background: "rgb(221, 221, 221)",
-      }}
+    }}
     >
       {match(tx.type).otherwise(() => (
         <div
@@ -304,9 +315,9 @@ const Content: React.FC<
             gap: "24px",
           }}
         >
-          {tx.assetsSent.length > 0 ? (
+          {sent.length > 0 ? (
             <TokenColumn>
-              {tx.assetsSent.map((asset) => (
+              {sent.map((asset) => (
                 <Asset
                   key={asset.asset.address}
                   transfer={asset}
@@ -316,12 +327,12 @@ const Content: React.FC<
               ))}
             </TokenColumn>
           ) : null}
-          {tx.assetsReceived.length > 0 && tx.assetsSent.length > 0 ? (
+          {received.length > 0 && sent.length > 0 ? (
             <Separator vertical />
           ) : null}
-          {tx.assetsReceived.length > 0 ? (
+          {received.length > 0 ? (
             <TokenColumn>
-              {tx.assetsReceived.map((asset) => (
+              {received.map((asset) => (
                 <Asset
                   key={asset.asset.address}
                   url={tokenIconMap[asset.asset.address]}
@@ -414,7 +425,12 @@ const MainComponent = ({
 
 export const drawFrame = (tx: InterpretedTransaction, context: TxContext) =>
   Effect.gen(function* () {
-    const tokens = tx.assetsSent.concat(tx.assetsReceived).map((asset) => {
+    const tokens = [
+      ...tx.assetsSent,
+      ...tx.assetsReceived,
+      ...(tx.assetsBurned || []),
+      ...(tx.assetsMinted || []),
+    ].map((asset) => {
       return asset.asset.address
     })
 
@@ -444,9 +460,10 @@ export const drawFrame = (tx: InterpretedTransaction, context: TxContext) =>
       {} as Record<string, string | null>,
     )
 
-
     if (context.from) {
-      context.from.profileImage = fromProfileImage ? fromProfileImage : undefined
+      context.from.profileImage = fromProfileImage
+        ? fromProfileImage
+        : undefined
     }
 
     if (context.to) {
@@ -481,3 +498,61 @@ export const drawFrame = (tx: InterpretedTransaction, context: TxContext) =>
 
     return pngData.asPng().buffer
   }).pipe(Effect.withSpan("drawFrame"))
+
+const ErrorComponent = ({ error }: { error: string }) => {
+  return (
+    <div
+      style={{
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "rgb(255, 255, 255)",
+        color: "rgb(0, 0, 0)",
+        fontSize: 32,
+        padding: "24px",
+        fontFamily: "NotoSans",
+        fontWeight: 400,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flex: 1,
+          alignItems: "center",
+          fontSize: "48px",
+          fontWeight: 600,
+          textShadow: "0px 4px 4px rgba(255, 255, 255, 0.08)",
+          justifyContent: "center",
+          textAlign: "center",
+        }}
+      >
+        {error}
+      </div>
+    </div>
+  )
+}
+
+export const drawErrorFrame = (error: string) =>
+  Effect.gen(function* () {
+    const svg = yield* Effect.tryPromise({
+      try: () => {
+        return satori(<ErrorComponent error={error} />, {
+          width: IMG_WIDTH,
+          height: IMG_HEIGHT,
+          fonts: fonts,
+          embedFont: true,
+        })
+      },
+      catch: (error) => {
+        console.error(error)
+      },
+    })
+
+    const resvg = new Resvg(svg, {
+      fitTo: { mode: "width", value: 1200 * 1.5 },
+    })
+    const pngData = resvg.render()
+
+    return pngData.asPng().buffer
+  }).pipe(Effect.withSpan("drawErrorFrame"))
