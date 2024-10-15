@@ -12,8 +12,8 @@ importers:
         specifier: ^0.19.0
         version: 0.19.0(@effect/schema@0.73.4(effect@3.8.2))(effect@3.8.2)(quickjs-emscripten@0.31.0)(viem@2.21.19(typescript@5.6.2)(zod@3.23.8))
       '@3loop/transaction-interpreter':
-        specifier: ^0.10.0
-        version: 0.10.0(@effect/schema@0.73.4(effect@3.8.2))(effect@3.8.2)(viem@2.21.19(typescript@5.6.2)(zod@3.23.8))
+        specifier: ^0.10.1
+        version: 0.10.1(@effect/schema@0.73.4(effect@3.8.2))(effect@3.8.2)(viem@2.21.19(typescript@5.6.2)(zod@3.23.8))
       '@effect/opentelemetry':
         specifier: ^0.37.4
         version: 0.37.6(@opentelemetry/api@1.9.0)(@opentelemetry/resources@1.26.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@1.26.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@1.26.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@1.26.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@1.26.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.27.0)(effect@3.8.2)
@@ -132,8 +132,8 @@ packages:
       quickjs-emscripten: ^0.29.1
       viem: ^2.7.22
 
-  '@3loop/transaction-interpreter@0.10.0':
-    resolution: {integrity: sha512-lLK78r+7+Q+yj3ftzYRHsvTH/rupI5vwrlITCylo1wjb5KSgjUEE1C3PATEv6chOJPa274HOzHAflG/D1qCMNw==}
+  '@3loop/transaction-interpreter@0.10.1':
+    resolution: {integrity: sha512-R8iMjMz95GLZDNqdREhfE1hhjMyzWwRJ0GwGn8friO5/51zpdpqwMINsa1mfIVNXj1DE7yoUXTR2Ty5JQkbTpw==}
     peerDependencies:
       effect: ^3.4.2
 
@@ -3183,7 +3183,7 @@ snapshots:
       traverse: 0.6.9
       viem: 2.21.19(typescript@5.6.2)(zod@3.23.8)
 
-  '@3loop/transaction-interpreter@0.10.0(@effect/schema@0.73.4(effect@3.8.2))(effect@3.8.2)(viem@2.21.19(typescript@5.6.2)(zod@3.23.8))':
+  '@3loop/transaction-interpreter@0.10.1(@effect/schema@0.73.4(effect@3.8.2))(effect@3.8.2)(viem@2.21.19(typescript@5.6.2)(zod@3.23.8))':
     dependencies:
       '@3loop/transaction-decoder': 0.19.0(@effect/schema@0.73.4(effect@3.8.2))(effect@3.8.2)(quickjs-emscripten@0.29.2)(viem@2.21.19(typescript@5.6.2)(zod@3.23.8))
       effect: 3.8.2
