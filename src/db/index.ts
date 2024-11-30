@@ -2,7 +2,7 @@ import * as SqliteDrizzle from "@effect/sql-drizzle/Sqlite"
 import { SqliteClient } from "@effect/sql-sqlite-bun"
 import { Config, Layer } from "effect"
 
-const SqlLive = SqliteClient.layer({
+const SqlLive = SqliteClient.layerConfig({
   filename: Config.string("DB_PATH"),
 })
 

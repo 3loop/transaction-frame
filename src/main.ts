@@ -1,17 +1,43 @@
-import { BunFileSystem, BunHttpServer, BunPath, BunRuntime } from "@effect/platform-bun"
+import {
+  BunFileSystem,
+  BunHttpServer,
+  BunPath,
+  BunRuntime,
+} from "@effect/platform-bun"
 
 import * as Dotenv from "dotenv"
 import { Config, Effect, Layer, LogLevel, Logger, Request } from "effect"
 import { DatabaseLive } from "./db"
-import { AbiStoreLive } from "./decoder/abi-loader"
-import { ContractMetaStoreLive } from "./decoder/meta-loader"
 import { RPCProviderLive } from "./decoder/provider"
 import { HttpLive } from "./router"
 import { TracingLive } from "./tracing"
-import { FetchHttpClient } from '@effect/platform'
+import { FetchHttpClient } from "@effect/platform"
 import { InterpreterLive } from "./interpreter"
+import {
+  SqlAbiStore,
+  SqlContractMetaStore,
+} from "@3loop/transaction-decoder/sql"
+import {
+  EtherscanV2StrategyResolver,
+  FourByteStrategyResolver,
+  OpenchainStrategyResolver,
+  SourcifyStrategyResolver,
+} from "@3loop/transaction-decoder"
 
 Dotenv.config()
+
+const AbiStoreLive = SqlAbiStore.make({
+  default: [
+    EtherscanV2StrategyResolver({
+      apikey: process.env.ETHERSCAN_API_KEY, // maybe can be a config?
+    }),
+    SourcifyStrategyResolver(),
+    OpenchainStrategyResolver(),
+    FourByteStrategyResolver(),
+  ],
+})
+
+const MetaStoreLive = SqlContractMetaStore.make()
 
 const LogLevelLive = Layer.unwrapEffect(
   Effect.gen(function* () {
@@ -22,7 +48,7 @@ const LogLevelLive = Layer.unwrapEffect(
 )
 
 const DataLayer = Layer.mergeAll(RPCProviderLive, DatabaseLive)
-const LoadersLayer = Layer.mergeAll(ContractMetaStoreLive, AbiStoreLive)
+const LoadersLayer = Layer.mergeAll(MetaStoreLive, AbiStoreLive)
 const DecoderLayer = Layer.provideMerge(LoadersLayer, DataLayer)
 
 const MainLive = Layer.provide(

@@ -5,11 +5,11 @@ import {
   HttpServerRequest,
   HttpServerResponse,
 } from "@effect/platform"
-import { Effect } from "effect"
+import { Effect, Schema } from "effect"
 import { Frame, getFrameHtml } from "frames.js"
 import { Hex } from "viem"
-import { Schema } from "@effect/schema"
 import { renderFrame } from "@/pages/frame"
+import { getFrameImageUrl } from "./interpret"
 
 const FrameActionSchema = Schema.Struct({
   trustedData: Schema.Struct({
@@ -30,41 +30,47 @@ const FrameActionSchema = Schema.Struct({
   }),
 })
 
-const TransactionFrame = (chainId: number, hash: Hex) => {
-  const explorerUrl =
-    providerConfigs[chainId as keyof typeof providerConfigs].explorerUrl ||
-    providerConfigs[1].explorerUrl // Default to mainnet if not found
+const TransactionFrame = (chainId: number, hash: Hex) =>
+  Effect.gen(function* () {
+    const url = yield* getFrameImageUrl({
+      chain: chainId,
+      hash: hash,
+    })
 
-  const frameUrl = `${process.env.HOST}/frame/${chainId}/${hash}`
-  const queryParams = new URLSearchParams()
-  queryParams.append("embeds[]", frameUrl)
-  const shareUrl = `https://warpcast.com/~/compose?${queryParams.toString()}`
-  return {
-    title: "Transaction Frame",
-    version: "vNext",
-    image: `${process.env.HOST}/interpret/${chainId}/${hash}`,
-    ogImage: `${process.env.HOST}/interpret/${chainId}/${hash}`,
-    imageAspectRatio: "1.91:1",
-    inputText: "Enter transaction hash",
-    buttons: [
-      {
-        label: "Search",
-        action: "post",
-        post_url: frameUrl,
-      },
-      {
-        label: "Explorer",
-        action: "link",
-        target: `${explorerUrl}/${hash}`,
-      },
-      {
-        label: "Share",
-        action: "link",
-        target: shareUrl,
-      },
-    ],
-  } as Frame
-}
+    const explorerUrl =
+      providerConfigs[chainId as keyof typeof providerConfigs].explorerUrl ||
+      providerConfigs[1].explorerUrl // Default to mainnet if not found
+
+    const frameUrl = `${process.env.HOST}/frame/${chainId}/${hash}`
+    const queryParams = new URLSearchParams()
+    queryParams.append("embeds[]", frameUrl)
+    const shareUrl = `https://warpcast.com/~/compose?${queryParams.toString()}`
+    return {
+      title: "Transaction Frame",
+      version: "vNext",
+      image: url,
+      ogImage: url,
+      imageAspectRatio: "1.91:1",
+      inputText: "Enter transaction hash",
+      buttons: [
+        {
+          label: "Search",
+          action: "post",
+          post_url: frameUrl,
+        },
+        {
+          label: "Explorer",
+          action: "link",
+          target: `${explorerUrl}/${hash}`,
+        },
+        {
+          label: "Share",
+          action: "link",
+          target: shareUrl,
+        },
+      ],
+    } as Frame
+  })
 
 export const FrameRouteGet = HttpRouter.get(
   "/frame/:chain/:hash",
@@ -82,12 +88,11 @@ export const FrameRouteGet = HttpRouter.get(
       )
     }
 
-    const stream = yield* Effect.promise(() =>
-      renderFrame(
-        `/interpret/${Number(params.chain)}/${params.hash}`,
-        TransactionFrame(Number(params.chain), params.hash as Hex),
-      ),
+    const frame = yield* TransactionFrame(
+      Number(params.chain),
+      params.hash as Hex,
     )
+    const stream = yield* Effect.promise(() => renderFrame(frame))
 
     return yield* HttpServerResponse.raw(stream)
   }),
@@ -111,28 +116,26 @@ export const FrameRoutePost = HttpRouter.post(
 
     const body = yield* HttpServerRequest.schemaBodyJson(FrameActionSchema)
 
-    const isValid = yield* validateMessage(body)
+    yield* validateMessage(body)
+
     const buttonIndex = body.untrustedData.buttonIndex
     const inputText = body.untrustedData.inputText
+
+    const frame = yield* TransactionFrame(
+      Number(params.chain),
+      params.hash as Hex,
+    )
 
     if (buttonIndex === 1 && inputText) {
       const isValidHash = /^0x[a-fA-F0-9]{64}$/.test(inputText)
       if (!isValidHash) {
         //ignore wrong input for now
-        return yield* HttpServerResponse.html(
-          getFrameHtml(
-            TransactionFrame(Number(params.chain), params.hash as Hex),
-          ),
-        )
+        return yield* HttpServerResponse.html(getFrameHtml(frame))
       }
       // If valid, you can proceed with using the inputText as the new hash
-      return yield* HttpServerResponse.html(
-        getFrameHtml(TransactionFrame(Number(params.chain), inputText as Hex)),
-      )
+      return yield* HttpServerResponse.html(getFrameHtml(frame))
     }
 
-    return yield* HttpServerResponse.html(
-      getFrameHtml(TransactionFrame(Number(params.chain), params.hash as Hex)),
-    )
+    return yield* HttpServerResponse.html(getFrameHtml(frame))
   }),
 )

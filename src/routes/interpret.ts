@@ -12,8 +12,13 @@ import { getFarcasterUserInfoByAddress } from "@/utils/airstack"
 import { InterpretedTransaction } from "@3loop/transaction-interpreter"
 import { TxContext } from "@/types"
 import { generateHeapSnapshot } from "bun"
-import { FileSystem, Path } from "@effect/platform"
-import { Schema } from "@effect/schema"
+import {
+  S3Client,
+  GetObjectCommand,
+  PutObjectCommand,
+  HeadObjectCommand,
+} from "@aws-sdk/client-s3"
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 async function getMemorySnapshot() {
   const mem = process.memoryUsage()
@@ -24,6 +29,15 @@ async function getMemorySnapshot() {
     await Bun.write("./heap.json", JSON.stringify(snapshot, null, 2))
   }
 }
+
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION!,
+  endpoint: process.env.AWS_ENDPOINT_URL_S3!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+})
 
 function getTxContext(
   tx: InterpretedTransaction,
@@ -70,32 +84,59 @@ function getTxContext(
   })
 }
 
+function makeCacheKey(chain: number, hash: string) {
+  return `${chain}-${hash}`
+}
+
+/**
+ * If the image was previously cached in s3, return the signed url otherwise return the server URL to generate new image
+ */
+export const getFrameImageUrl = ({
+  chain,
+  hash,
+}: {
+  chain: number
+  hash: string
+}) =>
+  Effect.gen(function* () {
+    const generateUrl = `${process.env.HOST}/interpret/${chain}/${hash}`
+
+    const cacheKey = makeCacheKey(chain, hash)
+
+    const command = new HeadObjectCommand({
+      Bucket: process.env.BUCKET_NAME!,
+      Key: cacheKey,
+    })
+
+    const exists = yield* Effect.either(
+      Effect.tryPromise(() => s3Client.send(command)),
+    )
+
+    if (Either.isRight(exists)) {
+      return yield* Effect.tryPromise(() =>
+        getSignedUrl(
+          s3Client,
+          new GetObjectCommand({
+            Bucket: process.env.BUCKET_NAME!,
+            Key: cacheKey,
+          }),
+          { expiresIn: 60 * 60 * 24 * 7 },
+        ),
+      )
+    }
+
+    return generateUrl
+  })
+
 const interpretAndGenerateImage = ({
   chain,
   hash,
-  cacheBoost,
 }: {
   chain: string
   hash: string
-  cacheBoost?: string
 }) =>
   Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem
-    const path = yield* Path.Path
-    const cacheKey = `${chain}-${hash}`
-
-    const cachePath = path.join("/tmp", cacheKey)
-
-    const exists = yield* fs.exists(cachePath)
-
-    if (exists) {
-      if (cacheBoost != null) {
-        yield* fs.remove(cachePath)
-      } else {
-        const content = yield* fs.readFile(cachePath)
-        return content
-      }
-    }
+    const cacheKey = makeCacheKey(Number(chain), hash)
 
     const decoded = yield* Effect.either(
       decodeTransactionByHash(hash as Hex, Number(chain)),
@@ -103,25 +144,30 @@ const interpretAndGenerateImage = ({
 
     if (Either.isLeft(decoded)) {
       yield* Effect.logError("Decode failed", decoded.left)
-      return yield* drawErrorFrame(
-        `Couldn't decode this transaction, try another one`,
-      )
+      return yield* drawErrorFrame("Couldn't decode this transaction")
     }
 
     const result = yield* Effect.either(interpretTransaction(decoded.right))
 
     if (Either.isLeft(result)) {
       yield* Effect.logError("Interpret failed", result.left)
-      return yield* drawErrorFrame(
-        `Couldn't interpret this transaction, try another one`,
-      )
+      return yield* drawErrorFrame("Couldn't interpret this transaction")
     }
 
     const context = yield* getTxContext(result.right)
 
     const image = yield* drawFrame(result.right, context)
 
-    yield* fs.writeFile(cachePath, new Uint8Array(image))
+    yield* Effect.tryPromise(() =>
+      s3Client.send(
+        new PutObjectCommand({
+          Bucket: process.env.BUCKET_NAME!,
+          Key: cacheKey,
+          Body: new Uint8Array(image),
+          ContentType: "image/png",
+        }),
+      ),
+    )
 
     return image
   })
@@ -130,12 +176,6 @@ export const InterpretRoute = HttpRouter.get(
   "/interpret/:chain/:hash",
   Effect.gen(function* () {
     const { chain, hash } = yield* HttpRouter.params
-
-    const { cacheBoost } = yield* HttpServerRequest.schemaSearchParams(
-      Schema.Struct({
-        cacheBoost: Schema.optional(Schema.String),
-      }),
-    )
 
     if (chain == null || isNaN(Number(chain)) || hash == null) {
       return yield* HttpServerResponse.json(
@@ -151,7 +191,6 @@ export const InterpretRoute = HttpRouter.get(
     const image = yield* interpretAndGenerateImage({
       chain: chain,
       hash: hash,
-      cacheBoost,
     })
 
     yield* Effect.try(getMemorySnapshot)

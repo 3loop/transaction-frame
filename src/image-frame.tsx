@@ -2,10 +2,7 @@ import { Effect } from "effect"
 import satori from "satori"
 import { Resvg } from "@resvg/resvg-js"
 import { fonts } from "./fonts"
-import {
-  InterpretedTransaction,
-  Payment,
-} from "@3loop/transaction-interpreter"
+import { InterpretedTransaction, Payment } from "@3loop/transaction-interpreter"
 import { match, P } from "ts-pattern"
 import { IMG_HEIGHT, IMG_WIDTH, providerConfigs } from "./constants"
 import { resolveToJpeg, resolveTokenIcon } from "./utils/image"
@@ -305,7 +302,7 @@ const Content: React.FC<
         border: "1px solid rgba(0, 0, 0, 0.08)",
         boxShadow: "inset 3px 3px 15px 3px rgba(11, 11, 15, 0.08)",
         background: "rgb(221, 221, 221)",
-    }}
+      }}
     >
       {match(tx.type).otherwise(() => (
         <div

@@ -76,9 +76,9 @@ export function FrameComponent(props: { imageUrl: string; frame: Frame }) {
 }
 
 // Update the renderFrame function to include the learnMoreUrl
-export async function renderFrame(imageUrl: string, frame: Frame) {
+export async function renderFrame(frame: Frame) {
   const stream = await renderToReadableStream(
-    <FrameComponent imageUrl={imageUrl} frame={frame} />,
+    <FrameComponent imageUrl={frame.image} frame={frame} />,
   )
   return stream
 }

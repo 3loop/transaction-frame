@@ -6,7 +6,6 @@ Example frame [link](https://decoder-frame.fly.dev/frame/8453/0x338447269f00f845
 
 <img width="481" alt="Screenshot 2024-09-23 at 17 35 40" src="https://github.com/user-attachments/assets/90690d8b-1190-474a-ae89-019741c06ef9">
 
-
 ## Endpoints
 
 - **Frame Endpoint** `/frame/:chain/:hash` - This endpoint provides a Farcaster frame metadata with a transaction image from the transaction hash.
