@@ -1,4 +1,4 @@
-import { DecodedTx } from "@3loop/transaction-decoder"
+import { DecodedTransaction } from "@3loop/transaction-decoder"
 import {
   EvalInterpreterLive,
   TransactionInterpreter,
@@ -8,7 +8,7 @@ import { Effect } from "effect"
 
 export const InterpreterLive = EvalInterpreterLive
 
-export const interpretTransaction = (decodedTx: DecodedTx) =>
+export const interpretTransaction = (decodedTx: DecodedTransaction) =>
   Effect.gen(function* () {
     const interpreterService = yield* TransactionInterpreter
 

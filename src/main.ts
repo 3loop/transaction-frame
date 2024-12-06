@@ -4,7 +4,6 @@ import {
   BunPath,
   BunRuntime,
 } from "@effect/platform-bun"
-
 import * as Dotenv from "dotenv"
 import { Config, Effect, Layer, LogLevel, Logger, Request } from "effect"
 import { DatabaseLive } from "./db"
@@ -14,36 +13,61 @@ import { TracingLive } from "./tracing"
 import { FetchHttpClient } from "@effect/platform"
 import { InterpreterLive } from "./interpreter"
 import {
+  ERC20RPCStrategyResolver,
+  EtherscanV2StrategyResolver,
+  ExperimentalErc20AbiStrategyResolver,
+  FourByteStrategyResolver,
+  NFTRPCStrategyResolver,
+  OpenchainStrategyResolver,
+  ProxyRPCStrategyResolver,
+  PublicClient,
+  SourcifyStrategyResolver,
+} from "@3loop/transaction-decoder"
+import {
   SqlAbiStore,
   SqlContractMetaStore,
 } from "@3loop/transaction-decoder/sql"
-import {
-  EtherscanV2StrategyResolver,
-  FourByteStrategyResolver,
-  OpenchainStrategyResolver,
-  SourcifyStrategyResolver,
-} from "@3loop/transaction-decoder"
 
 Dotenv.config()
-
-const AbiStoreLive = SqlAbiStore.make({
-  default: [
-    EtherscanV2StrategyResolver({
-      apikey: process.env.ETHERSCAN_API_KEY, // maybe can be a config?
-    }),
-    SourcifyStrategyResolver(),
-    OpenchainStrategyResolver(),
-    FourByteStrategyResolver(),
-  ],
-})
-
-const MetaStoreLive = SqlContractMetaStore.make()
 
 const LogLevelLive = Layer.unwrapEffect(
   Effect.gen(function* () {
     const debug = yield* Config.withDefault(Config.boolean("DEBUG"), false)
     const level = debug ? LogLevel.All : LogLevel.Info
     return Logger.minimumLogLevel(level)
+  }),
+)
+
+const AbiStoreLive = Layer.unwrapEffect(
+  Effect.gen(function* () {
+    const service = yield* PublicClient
+    const apikey = yield* Config.string("ETHERSCAN_API_KEY")
+
+    return SqlAbiStore.make({
+      default: [
+        EtherscanV2StrategyResolver({
+          apikey: apikey,
+        }),
+        ExperimentalErc20AbiStrategyResolver(service),
+        SourcifyStrategyResolver(),
+        OpenchainStrategyResolver(),
+        FourByteStrategyResolver(),
+      ],
+    })
+  }),
+)
+
+const MetaStoreLive = Layer.unwrapEffect(
+  Effect.gen(function* () {
+    const service = yield* PublicClient
+
+    return SqlContractMetaStore.make({
+      default: [
+        ERC20RPCStrategyResolver(service),
+        NFTRPCStrategyResolver(service),
+        ProxyRPCStrategyResolver(service),
+      ],
+    })
   }),
 )
 
