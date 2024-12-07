@@ -94,7 +94,12 @@ export const FrameRouteGet = HttpRouter.get(
     )
     const stream = yield* Effect.promise(() => renderFrame(frame))
 
-    return yield* HttpServerResponse.raw(stream)
+    return yield* HttpServerResponse.raw(stream).pipe(
+      HttpServerResponse.setHeaders({
+        "Cache-Control": "public, max-age=31536000",
+        "Expires": new Date(Date.now() + 31536000000).toUTCString(),
+      }),
+    )
   }),
 )
 
