@@ -1,7 +1,6 @@
 import { decodeTransactionByHash } from "@3loop/transaction-decoder"
 import {
   HttpRouter,
-  HttpServerRequest,
   HttpServerResponse,
 } from "@effect/platform"
 import { Effect, Either } from "effect"
@@ -14,11 +13,9 @@ import { TxContext } from "@/types"
 import { generateHeapSnapshot } from "bun"
 import {
   S3Client,
-  GetObjectCommand,
   PutObjectCommand,
   HeadObjectCommand,
 } from "@aws-sdk/client-s3"
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 async function getMemorySnapshot() {
   const mem = process.memoryUsage()
@@ -89,7 +86,7 @@ function makeCacheKey(chain: number, hash: string) {
 }
 
 /**
- * If the image was previously cached in s3, return the signed url otherwise return the server URL to generate new image
+ * If the image was previously cached in s3, return the public url otherwise generate the image and cache it
  */
 export const getFrameImageUrl = ({
   chain,
@@ -99,8 +96,6 @@ export const getFrameImageUrl = ({
   hash: string
 }) =>
   Effect.gen(function* () {
-    const generateUrl = `${process.env.HOST}/interpret/${chain}/${hash}`
-
     const cacheKey = makeCacheKey(chain, hash)
 
     const command = new HeadObjectCommand({
@@ -112,27 +107,21 @@ export const getFrameImageUrl = ({
       Effect.tryPromise(() => s3Client.send(command)),
     )
 
-    if (Either.isRight(exists)) {
-      return yield* Effect.tryPromise(() =>
-        getSignedUrl(
-          s3Client,
-          new GetObjectCommand({
-            Bucket: process.env.BUCKET_NAME!,
-            Key: cacheKey,
-          }),
-          { expiresIn: 60 * 60 * 24 * 7 },
-        ),
-      )
+    if (Either.isLeft(exists)) {
+      yield* interpretAndGenerateImage({
+        chain: chain,
+        hash: hash,
+      })
     }
 
-    return generateUrl
+    return `https://fly.storage.tigris.dev/${process.env.BUCKET_NAME!}/${cacheKey}`
   })
 
 const interpretAndGenerateImage = ({
   chain,
   hash,
 }: {
-  chain: string
+  chain: number
   hash: string
 }) =>
   Effect.gen(function* () {
@@ -189,7 +178,7 @@ export const InterpretRoute = HttpRouter.get(
     }
 
     const image = yield* interpretAndGenerateImage({
-      chain: chain,
+      chain: Number(chain),
       hash: hash,
     })
 
